@@ -953,21 +953,24 @@
                     serviceName: serviceNameSpan.textContent.trim()
                 };
                 
+                // Debug log
+                console.log('Form Data:', formData);
+                
                 // Validate form data
-                if (!formData.name || !formData.email || !formData.phone || !formData.projectDetails || !formData.budget) {
-                    throw new Error('Please fill in all required fields');
+                if (!formData.name) {
+                    throw new Error('Please enter your name');
                 }
-                
-                // Validate email format
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(formData.email)) {
-                    throw new Error('Please enter a valid email address');
+                if (!formData.email) {
+                    throw new Error('Please enter your email');
                 }
-                
-                // Validate phone number (basic validation)
-                const phoneRegex = /^[0-9]{10}$/;
-                if (!phoneRegex.test(formData.phone.replace(/\D/g, ''))) {
-                    throw new Error('Please enter a valid phone number (10 digits)');
+                if (!formData.phone) {
+                    throw new Error('Please enter your phone number');
+                }
+                if (!formData.projectDetails) {
+                    throw new Error('Please enter project details');
+                }
+                if (!formData.budget) {
+                    throw new Error('Please select a budget range');
                 }
                 
                 // Send data to PHP script
@@ -980,10 +983,11 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`Server error: ${response.status}`);
                 }
                 
                 const result = await response.json();
+                console.log('Server Response:', result);
                 
                 if (result.success) {
                     // Hide form and show success message

@@ -9,6 +9,13 @@ header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json');
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'vendor/phpmailer/phpmailer/src/Exception.php';
+require 'vendor/phpmailer/phpmailer/src/PHPMailer.php';
+require 'vendor/phpmailer/phpmailer/src/SMTP.php';
+
 // Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -50,62 +57,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new Exception('Invalid email format');
         }
-        
-        // Email settings
-        $to = "kushalmahawar114@gmail.com";
-        $subject = "New Project Inquiry - " . $serviceName;
-        
-        // Email content with HTML formatting
-        $message = "
-        <html>
-        <head>
-            <title>New Project Inquiry</title>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: #f8f9fa; padding: 20px; border-radius: 5px; }
-                .content { padding: 20px; }
-                .footer { text-align: center; padding: 20px; color: #666; }
-            </style>
-        </head>
-        <body>
-            <div class='container'>
-                <div class='header'>
-                    <h2>New Project Inquiry Details</h2>
+
+        // Create a new PHPMailer instance
+        $mail = new PHPMailer(true);
+
+        try {
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';  // Replace with your SMTP host
+            $mail->SMTPAuth = true;
+            $mail->Username = 'kushalmahawar114@gmail.com';  // Replace with your email
+            $mail->Password = 'Kbmbjy11';     // Replace with your app password
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = 587;
+
+            // Recipients
+            $mail->setFrom('noreply@craftory.studio', 'Craftory Studio');
+            $mail->addAddress('kushalmahawar114@gmail.com');
+            $mail->addReplyTo($email, $name);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = "New Project Inquiry - " . $serviceName;
+            
+            // Email content with HTML formatting
+            $mail->Body = "
+            <html>
+            <head>
+                <title>New Project Inquiry</title>
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background: #f8f9fa; padding: 20px; border-radius: 5px; }
+                    .content { padding: 20px; }
+                    .footer { text-align: center; padding: 20px; color: #666; }
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <div class='header'>
+                        <h2>New Project Inquiry Details</h2>
+                    </div>
+                    <div class='content'>
+                        <p><strong>Service/Package:</strong> {$serviceName}</p>
+                        <p><strong>Name:</strong> {$name}</p>
+                        <p><strong>Email:</strong> {$email}</p>
+                        <p><strong>Phone:</strong> {$phone}</p>
+                        <p><strong>Budget Range:</strong> {$budget}</p>
+                        <p><strong>Project Details:</strong></p>
+                        <p>{$projectDetails}</p>
+                    </div>
+                    <div class='footer'>
+                        <p>This is an automated message from your website contact form.</p>
+                    </div>
                 </div>
-                <div class='content'>
-                    <p><strong>Service/Package:</strong> {$serviceName}</p>
-                    <p><strong>Name:</strong> {$name}</p>
-                    <p><strong>Email:</strong> {$email}</p>
-                    <p><strong>Phone:</strong> {$phone}</p>
-                    <p><strong>Budget Range:</strong> {$budget}</p>
-                    <p><strong>Project Details:</strong></p>
-                    <p>{$projectDetails}</p>
-                </div>
-                <div class='footer'>
-                    <p>This is an automated message from your website contact form.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        ";
-        
-        // Email headers
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= "From: Craftory Studio <noreply@craftory.studio>" . "\r\n";
-        $headers .= "Reply-To: {$email}" . "\r\n";
-        
-        // Send email
-        $mailSent = mail($to, $subject, $message, $headers);
-        
-        if ($mailSent) {
+            </body>
+            </html>
+            ";
+
+            $mail->AltBody = "
+            New Project Inquiry Details\n\n
+            Service/Package: {$serviceName}\n
+            Name: {$name}\n
+            Email: {$email}\n
+            Phone: {$phone}\n
+            Budget Range: {$budget}\n
+            Project Details: {$projectDetails}
+            ";
+
+            $mail->send();
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Email sent successfully'
             ]);
-        } else {
-            throw new Exception('Failed to send email');
+            
+        } catch (Exception $e) {
+            throw new Exception("Message could not be sent. Mailer Error: {$mail->ErrorInfo}");
         }
         
     } catch (Exception $e) {

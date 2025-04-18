@@ -835,35 +835,41 @@
             <button class="close-modal" onclick="closeModal()">
                 <i class="fas fa-times"></i>
             </button>
-            <form id="get-started-form">
+            <form id="get-started-form" novalidate>
                 <div class="form-group">
-                    <input type="text" id="name" required placeholder=" ">
+                    <input type="text" id="name" name="name" required placeholder=" ">
                     <label for="name">Your Name</label>
+                    <div class="error-message" id="name-error"></div>
                 </div>
                 <div class="form-group">
-                    <input type="email" id="email" required placeholder=" ">
+                    <input type="email" id="email" name="email" required placeholder=" ">
                     <label for="email">Email Address</label>
+                    <div class="error-message" id="email-error"></div>
                 </div>
                 <div class="form-group">
-                    <input type="tel" id="phone" required placeholder=" ">
+                    <input type="tel" id="phone" name="phone" required placeholder=" ">
                     <label for="phone">Phone Number</label>
+                    <div class="error-message" id="phone-error"></div>
                 </div>
                 <div class="form-group">
-                    <textarea id="project-details" required placeholder=" "></textarea>
+                    <textarea id="project-details" name="project-details" required placeholder=" "></textarea>
                     <label for="project-details">Project Details</label>
+                    <div class="error-message" id="project-details-error"></div>
                 </div>
                 <div class="form-group">
-                    <select id="budget" required>
+                    <select id="budget" name="budget" required>
                         <option value="" disabled selected>Select Budget Range</option>
                         <option value="small">₹5,000 - ₹10,000</option>
                         <option value="medium">₹10,000 - ₹25,000</option>
                         <option value="large">₹25,000+</option>
                     </select>
+                    <div class="error-message" id="budget-error"></div>
                 </div>
                 <div class="checkbox-container">
-                    <input type="checkbox" id="terms" required>
+                    <input type="checkbox" id="terms" name="terms" required>
                     <label class="checkmark" for="terms"></label>
                     <span>I agree to the terms and conditions</span>
+                    <div class="error-message" id="terms-error"></div>
                 </div>
                 <button type="submit" class="btn primary">Submit Request</button>
             </form>
@@ -932,81 +938,146 @@
             }
         });
         
-        // Handle form submission
-        form.addEventListener("submit", async function(e) {
-            e.preventDefault();
+        // Form validation and submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('get-started-form');
+            const serviceNameSpan = document.getElementById('service-name');
+            const successMessage = document.querySelector('.success-message');
             
-            // Disable submit button and show loading state
-            const submitButton = form.querySelector('button[type="submit"]');
-            const originalButtonText = submitButton.innerHTML;
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-            
-            try {
-                // Get form data
-                const formData = {
-                    name: document.getElementById("name").value.trim(),
-                    email: document.getElementById("email").value.trim(),
-                    phone: document.getElementById("phone").value.trim(),
-                    projectDetails: document.getElementById("project-details").value.trim(),
-                    budget: document.getElementById("budget").value,
-                    serviceName: serviceNameSpan.textContent.trim()
-                };
-                
-                // Debug log
-                console.log('Form Data:', formData);
-                
-                // Validate form data
-                if (!formData.name) {
-                    throw new Error('Please enter your name');
-                }
-                if (!formData.email) {
-                    throw new Error('Please enter your email');
-                }
-                if (!formData.phone) {
-                    throw new Error('Please enter your phone number');
-                }
-                if (!formData.projectDetails) {
-                    throw new Error('Please enter project details');
-                }
-                if (!formData.budget) {
-                    throw new Error('Please select a budget range');
-                }
-                
-                // Send data to PHP script
-                const response = await fetch('send_email.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
+            // Real-time validation
+            const inputs = form.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateField(this);
                 });
                 
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
+                input.addEventListener('blur', function() {
+                    validateField(this);
+                });
+            });
+            
+            // Validate single field
+            function validateField(field) {
+                const errorElement = document.getElementById(`${field.id}-error`);
+                let isValid = true;
+                let errorMessage = '';
+                
+                // Remove existing error class
+                field.classList.remove('error');
+                
+                // Check if field is empty
+                if (!field.value.trim()) {
+                    isValid = false;
+                    errorMessage = `${field.name.charAt(0).toUpperCase() + field.name.slice(1)} is required`;
                 }
                 
-                const result = await response.json();
-                console.log('Server Response:', result);
+                // Specific validations
+                if (isValid) {
+                    switch(field.id) {
+                        case 'email':
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!emailRegex.test(field.value)) {
+                                isValid = false;
+                                errorMessage = 'Please enter a valid email address';
+                            }
+                            break;
+                            
+                        case 'phone':
+                            const phoneRegex = /^[0-9]{10}$/;
+                            if (!phoneRegex.test(field.value.replace(/\D/g, ''))) {
+                                isValid = false;
+                                errorMessage = 'Please enter a valid 10-digit phone number';
+                            }
+                            break;
+                            
+                        case 'project-details':
+                            if (field.value.trim().length < 10) {
+                                isValid = false;
+                                errorMessage = 'Project details must be at least 10 characters long';
+                            }
+                            break;
+                    }
+                }
                 
-                if (result.success) {
-                    // Hide form and show success message
-                    form.style.display = "none";
-                    successMessage.style.display = "block";
-                    
-                    // Reset form for next time
-                    form.reset();
+                // Show/hide error message
+                if (!isValid) {
+                    field.classList.add('error');
+                    errorElement.textContent = errorMessage;
+                    errorElement.style.display = 'block';
                 } else {
-                    throw new Error(result.message || 'Failed to send message');
+                    errorElement.style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert(error.message || "An error occurred. Please try again.");
-            } finally {
-                // Re-enable submit button and restore original text
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonText;
+                
+                return isValid;
             }
+            
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate all fields
+                let isValid = true;
+                inputs.forEach(input => {
+                    if (!validateField(input)) {
+                        isValid = false;
+                    }
+                });
+                
+                if (!isValid) {
+                    return;
+                }
+                
+                // Disable submit button and show loading state
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                try {
+                    // Get form data
+                    const formData = {
+                        name: document.getElementById('name').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        phone: document.getElementById('phone').value.trim(),
+                        projectDetails: document.getElementById('project-details').value.trim(),
+                        budget: document.getElementById('budget').value,
+                        serviceName: serviceNameSpan.textContent.trim()
+                    };
+                    
+                    // Send data to PHP script
+                    const response = await fetch('send_email.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Hide form and show success message
+                        form.style.display = 'none';
+                        successMessage.style.display = 'block';
+                        
+                        // Reset form for next time
+                        form.reset();
+                    } else {
+                        throw new Error(result.message || 'Failed to send message');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert(error.message || 'An error occurred. Please try again.');
+                } finally {
+                    // Re-enable submit button and restore original text
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
+                }
+            });
         });
         
         // Close success message

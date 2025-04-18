@@ -1044,6 +1044,8 @@
                         serviceName: serviceNameSpan.textContent.trim()
                     };
                     
+                    console.log('Sending form data:', formData);
+                    
                     // Send data to PHP script
                     const response = await fetch('send_email.php', {
                         method: 'POST',
@@ -1053,11 +1055,14 @@
                         body: JSON.stringify(formData)
                     });
                     
+                    console.log('Response status:', response.status);
+                    
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.status}`);
                     }
                     
                     const result = await response.json();
+                    console.log('Response data:', result);
                     
                     if (result.success) {
                         // Hide form and show success message

@@ -57,7 +57,7 @@ try {
     }
     
     // Create email content
-    $to = "hello@craftory.studio"; // Replace with your email
+    $to = "kushalmahawar114@gmail.com"; // Your email address
     $subject = "New Project Request: $serviceName";
     
     $message = "
@@ -96,7 +96,7 @@ try {
     // Set email headers
     $headers = "MIME-Version: 1.0" . "\r\n";
     $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: $email" . "\r\n";
+    $headers .= "From: Craftory Studio <noreply@craftory.studio>" . "\r\n";
     $headers .= "Reply-To: $email" . "\r\n";
     
     // Send email
